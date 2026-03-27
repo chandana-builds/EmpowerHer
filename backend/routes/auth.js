@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
-const sendEmail = require('../utils/sendEmail');
 
 // Demo users for when MongoDB is not connected
 const DEMO_USERS = [
@@ -28,25 +27,13 @@ router.post('/register', async (req, res) => {
         const existing = await User.findOne({ email });
         if (existing) return res.status(409).json({ message: 'Email already registered' });
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const user = new User({ name, email, password, location, businessType, interests: interests || [], otp, otpExpiry: new Date(Date.now() + 10 * 60000) });
+        const user = new User({ name, email, password, location, businessType, interests: interests || [], isVerified: true });
         await user.save();
 
-        try {
-            await sendEmail({
-                email: user.email,
-                subject: 'EmpowerHer - Verify your email',
-                message: `Hello ${user.name},\n\nYour OTP for EmpowerHer registration is: ${otp}\n\nIt is valid for 10 minutes.\n\nWelcome to the community! 🌸`
-            });
-            res.status(201).json({ message: 'Registration successful. OTP sent to your email.', userId: user._id });
-        } catch (emailError) {
-            // Delete the unverified user if the email fails entirely so they can try again.
-            await User.findByIdAndDelete(user._id);
-            res.status(500).json({ message: 'Registration failed: Could not send OTP email. Please check server email credentials.' });
-        }
+        res.status(201).json({ message: 'Registration successful.', userId: user._id });
     } catch (err) {
         // Fallback: registration noted
-        res.status(201).json({ message: 'Registration successful! Please verify your email.', userId: 'new-' + Date.now() });
+        res.status(201).json({ message: 'Registration successful!', userId: 'new-' + Date.now() });
     }
 });
 

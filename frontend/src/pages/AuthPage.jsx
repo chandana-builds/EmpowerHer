@@ -48,10 +48,11 @@ export default function AuthPage() {
         setLoading(true);
         try {
             await register(form);
-            setStep(2);
-            toast.success('OTP sent to your email!');
+            await login(form.email, form.password);
+            toast.success('Registration successful! Welcome to EmpowerHer 🌸');
+            navigate('/dashboard');
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Registration failed');
+            toast.error(err.response?.data?.message || 'Registration failed. (If testing locally, use Demo credentials).');
         } finally { setLoading(false); }
     };
 
