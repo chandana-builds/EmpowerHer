@@ -20,12 +20,24 @@ const MOCK_TICKETS = [
     { _id: 't2', subject: 'Facing harassment in a group', user: { name: 'Aisha Khan', email: 'aisha@example.com' }, category: 'Abuse', priority: 'urgent', status: 'open', createdAt: new Date(Date.now() - 86400000) },
 ];
 
+const MOCK_EVENTS = [
+    { _id: 'e1', title: 'Women in Tech Summit 2026', date: new Date(Date.now() + 86400000 * 5), location: 'Bangalore / Virtual', attendees: 150, status: 'upcoming' },
+    { _id: 'e2', title: 'StartUp Pitch Day', date: new Date(Date.now() + 86400000 * 12), location: 'Mumbai', attendees: 85, status: 'upcoming' },
+    { _id: 'e3', title: 'Financial Literacy Workshop', date: new Date(Date.now() + 86400000 * 20), location: 'Virtual', attendees: 320, status: 'open' }
+];
+
+const MOCK_MARKETPLACE = [
+    { _id: 'm1', title: 'Handloom Silk Saree', price: 4500, seller: 'Lakshmi Iyer', category: 'Clothing', status: 'active' },
+    { _id: 'm2', title: 'Organic Skincare Kit', price: 1200, seller: 'Aisha Khan', category: 'Beauty', status: 'active' },
+    { _id: 'm3', title: 'Business Consulting Hour', price: 2500, seller: 'Sarah Ahmed', category: 'Services', status: 'active' }
+];
+
 const roleColor = { member: 'bg-purple-100 text-purple-700', mentor: 'bg-teal-100 text-teal-700', admin: 'bg-red-100 text-red-700' };
 const priorityColor = { low: 'text-slate-500', medium: 'text-blue-600', high: 'text-orange-600', urgent: 'text-red-600 font-bold' };
 
-function StatCard({ icon: Icon, label, value, color, dark }) {
+function StatCard({ icon: Icon, label, value, color, dark, onClick }) {
     return (
-        <div className={`p-5 rounded-2xl border ${dark ? 'bg-slate-900 border-slate-800' : 'bg-white border-purple-100'}`}>
+        <div onClick={onClick} className={`p-5 rounded-2xl border ${onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''} ${dark ? 'bg-slate-900 border-slate-800' : 'bg-white border-purple-100'}`}>
             <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-3`}>
                 <Icon size={20} className="text-white" />
             </div>
@@ -41,11 +53,15 @@ export default function AdminPanel() {
     const [stats, setStats] = useState(MOCK_STATS);
     const [users, setUsers] = useState(MOCK_USERS);
     const [tickets, setTickets] = useState(MOCK_TICKETS);
+    const [events, setEvents] = useState(MOCK_EVENTS);
+    const [marketplace, setMarketplace] = useState(MOCK_MARKETPLACE);
 
     useEffect(() => {
         axios.get('/api/admin/stats').then(r => setStats(r.data.stats || MOCK_STATS)).catch(() => setStats(MOCK_STATS));
         axios.get('/api/admin/users').then(r => setUsers(r.data.users || MOCK_USERS)).catch(() => setUsers(MOCK_USERS));
         axios.get('/api/admin/tickets').then(r => setTickets(r.data.tickets || MOCK_TICKETS)).catch(() => setTickets(MOCK_TICKETS));
+        axios.get('/api/admin/events').then(r => setEvents(r.data.events || MOCK_EVENTS)).catch(() => setEvents(MOCK_EVENTS));
+        axios.get('/api/admin/marketplace').then(r => setMarketplace(r.data.items || MOCK_MARKETPLACE)).catch(() => setMarketplace(MOCK_MARKETPLACE));
     }, []);
 
     const updateRole = async (userId, newRole) => {
@@ -65,6 +81,8 @@ export default function AdminPanel() {
         { id: 'overview', label: '📊 Overview' },
         { id: 'users', label: '👥 Users' },
         { id: 'tickets', label: '🎫 Tickets' },
+        { id: 'events', label: '📅 Events' },
+        { id: 'marketplace', label: '🛍️ Marketplace' },
     ];
 
     return (
@@ -95,10 +113,10 @@ export default function AdminPanel() {
                 {tab === 'overview' && (
                     <div className="space-y-6">
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <StatCard icon={Users} label="Total Members" value={stats.totalMembers} color="from-purple-500 to-violet-600" dark={dark} />
-                            <StatCard icon={Calendar} label="Active Events" value={stats.activeEvents} color="from-teal-500 to-cyan-600" dark={dark} />
-                            <StatCard icon={MessageSquare} label="Open Tickets" value={stats.openTickets} color="from-red-400 to-rose-600" dark={dark} />
-                            <StatCard icon={ShoppingBag} label="Marketplace Items" value={stats.marketplaceItems} color="from-orange-400 to-pink-500" dark={dark} />
+                            <StatCard icon={Users} label="Total Members" value={stats.totalMembers} color="from-purple-500 to-violet-600" dark={dark} onClick={() => setTab('users')} />
+                            <StatCard icon={Calendar} label="Active Events" value={stats.activeEvents} color="from-teal-500 to-cyan-600" dark={dark} onClick={() => setTab('events')} />
+                            <StatCard icon={MessageSquare} label="Open Tickets" value={stats.openTickets} color="from-red-400 to-rose-600" dark={dark} onClick={() => setTab('tickets')} />
+                            <StatCard icon={ShoppingBag} label="Marketplace Items" value={stats.marketplaceItems} color="from-orange-400 to-pink-500" dark={dark} onClick={() => setTab('marketplace')} />
                         </div>
                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                             <StatCard icon={TrendingUp} label="New This Month" value={stats.newMembersThisMonth} color="from-green-400 to-emerald-600" dark={dark} />
@@ -198,6 +216,86 @@ export default function AdminPanel() {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Events */}
+                {tab === 'events' && (
+                    <div className={`rounded-2xl border overflow-hidden ${dark ? 'bg-slate-900 border-slate-800' : 'bg-white border-purple-100'}`}>
+                        <div className={`p-4 border-b ${dark ? 'border-slate-800' : 'border-purple-50'}`}>
+                            <h2 className={`font-bold ${dark ? 'text-white' : 'text-slate-800'}`}>Platform Events ({events.length})</h2>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className={`text-xs uppercase tracking-wider ${dark ? 'bg-slate-800 text-slate-400' : 'bg-purple-50 text-slate-500'}`}>
+                                    <tr>
+                                        {['Event', 'Date', 'Location', 'Attendees', 'Status', 'Actions'].map(h => (
+                                            <th key={h} className="px-4 py-3 text-left font-semibold">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className={`divide-y ${dark ? 'divide-slate-800' : 'divide-purple-50'}`}>
+                                    {events.map(e => (
+                                        <tr key={e._id} className={`transition-colors ${dark ? 'hover:bg-slate-800' : 'hover:bg-purple-50/30'}`}>
+                                            <td className={`px-4 py-4 font-semibold text-sm ${dark ? 'text-white' : 'text-slate-800'}`}>{e.title}</td>
+                                            <td className={`px-4 py-4 text-sm ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{new Date(e.date).toLocaleDateString('en-IN')}</td>
+                                            <td className={`px-4 py-4 text-sm ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{e.location}</td>
+                                            <td className={`px-4 py-4 text-sm font-semibold text-purple-600`}>{e.attendees} registered</td>
+                                            <td className="px-4 py-4">
+                                                <span className={`text-xs px-2 py-1 rounded-full font-semibold ${e.status === 'upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                                    {e.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <button className="p-2 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* Marketplace */}
+                {tab === 'marketplace' && (
+                    <div className={`rounded-2xl border overflow-hidden ${dark ? 'bg-slate-900 border-slate-800' : 'bg-white border-purple-100'}`}>
+                        <div className={`p-4 border-b ${dark ? 'border-slate-800' : 'border-purple-50'}`}>
+                            <h2 className={`font-bold ${dark ? 'text-white' : 'text-slate-800'}`}>Marketplace Items ({marketplace.length})</h2>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className={`text-xs uppercase tracking-wider ${dark ? 'bg-slate-800 text-slate-400' : 'bg-purple-50 text-slate-500'}`}>
+                                    <tr>
+                                        {['Item', 'Category', 'Price', 'Seller', 'Status', 'Actions'].map(h => (
+                                            <th key={h} className="px-4 py-3 text-left font-semibold">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className={`divide-y ${dark ? 'divide-slate-800' : 'divide-purple-50'}`}>
+                                    {marketplace.map(m => (
+                                        <tr key={m._id} className={`transition-colors ${dark ? 'hover:bg-slate-800' : 'hover:bg-purple-50/30'}`}>
+                                            <td className={`px-4 py-4 font-semibold text-sm ${dark ? 'text-white' : 'text-slate-800'}`}>{m.title}</td>
+                                            <td className={`px-4 py-4 text-sm ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{m.category}</td>
+                                            <td className={`px-4 py-4 text-sm font-bold text-green-600`}>₹{m.price.toLocaleString()}</td>
+                                            <td className={`px-4 py-4 text-sm ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{m.seller}</td>
+                                            <td className="px-4 py-4">
+                                                <span className={`text-xs px-2 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-700`}>
+                                                    {m.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <button className="p-2 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 )}
